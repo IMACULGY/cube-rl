@@ -6,9 +6,13 @@ class Cube(object):
         self.pycube = pc.Cube()
         self.alg = pc.Formula()
 
+        self.solvedstr = str(pc.Cube())
+
         # actions
         self.action_list = ["U", "U'", "D", "D'", "L", "L'", "R", "R'", "F", "F'", "B", "B'"]
         self.action_map = {self.action_list[i]: i for i in range(len(self.action_list))}
+
+    
 
     # reset the environment by generating a scramble n moves away from the solved state
     def reset(self, n=-1):
@@ -20,7 +24,7 @@ class Cube(object):
             randomalg = self.alg.random(n)
         # execute the algorithm on the cube
         cube.pycube(randomalg)
-        return self.pycube
+        return self.pycube, randomalg
     
     # step by executing the current action on the cube
     def step(self, act):
@@ -29,10 +33,16 @@ class Cube(object):
         done = False
         # check for termination by comparing to the solved state
         # (this is temporary)
-        if str(self.pycube) == str(pc.Cube()):
+        if str(self.pycube) == self.solvedstr:
             reward = 1
             done = True
         return self.pycube, reward, done
+
+    # render the cube in terminal using colors
+    def render(self):
+        print(repr(self.pycube))
+
+
 
 
 cube = Cube()
@@ -40,3 +50,4 @@ randomalg = cube.alg.random(6)
 print(randomalg)
 cube.pycube(randomalg)
 print(cube.pycube)
+cube.render()
