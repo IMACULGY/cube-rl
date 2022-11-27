@@ -1,5 +1,4 @@
 import numpy as np
-from math import ceil
 
 # map which takes in a color, and outputs an array representing the color
 colormap = {
@@ -141,7 +140,7 @@ def encode(cube):
         m = locationmap[cubelet[trackindex(cubelet)]]
         # update encoding
         arr[n,m] = 1
-    return arr
+    return arr.flatten()
 
 # uncomment to debug
 # import pycuber as pc

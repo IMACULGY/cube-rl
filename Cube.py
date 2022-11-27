@@ -44,10 +44,10 @@ class Cube(object):
 
 
 
-
-cube = Cube()
-randomalg = cube.alg.random(6)
-print(randomalg)
-cube.pycube(randomalg)
-print(cube.pycube)
-cube.render()
+# Uncomment to debug
+# cube = Cube()
+# randomalg = cube.alg.random(6)
+# print(randomalg)
+# cube.pycube(randomalg)
+# print(cube.pycube)
+# cube.render()
