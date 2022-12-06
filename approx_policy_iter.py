@@ -39,14 +39,18 @@ class API_NN(nn.Module):
         return policy, value
 
 # supervised training for NN with input [X,Y]
-def TrainNN(net, x, y, weights, EPOCHS=10000):
+def TrainNN(net, x, y, weights, EPOCHS=10):
     # initialize tensors
     x = torch.FloatTensor(x)
     y1 = torch.stack([a[0] for a in y],dim=0)
     y2 = torch.FloatTensor([[a[1]] for a in y])
+    weights = torch.FloatTensor(weights)
     x.to(device)
     y1.to(device)
     y2.to(device)
+    weights.to(device)
+
+    # print(weights)
 
     # define losses and optimizer
     celoss = nn.CrossEntropyLoss()
@@ -68,6 +72,10 @@ def TrainNN(net, x, y, weights, EPOCHS=10000):
         l1 = celoss(y1, pred[0])
         l2 = mseloss(y2, pred[1])
         sumlosses = sum([l1, l2])
+        # apply sample weighting
+        sumlosses = sumlosses * weights
+        sumlosses = sumlosses.mean()
+
         bar.set_description(f"Loss = {sumlosses.item()}")
 
         # backward propagation
@@ -83,31 +91,42 @@ def init_weights(m):
         m.bias.data.fill_(0.01)
 
 # API algorithm (autodidactic iteration)
-def API(num_iter, env):
+def API(env, num_iter=10000, load=False, loadPath="api_model.pt"):
     # initialize neural net
-    print("Initializing weights...")
     net = API_NN()
     net.to(device)
-    net.apply(init_weights)
+    if (load):
+        print(f"Loading from {loadPath}")
+        net.load_state_dict(torch.load(loadPath))
+    else:
+        print("Initializing weights...")
+        net.apply(init_weights)
 
     # inialize losses for each iteration
     losses = []
 
-    num_moves = 3
-    num_scrambles = 1
+    
+    num_moves = 6
+    num_scrambles = 100
 
     for m in range(num_iter):
+        # update number of moves per scramble
+        # num_moves = (m+1)/num_iter * 20
+
         # get n scrambled cubes
         X = np.zeros((num_scrambles * num_moves, env.statesize))
         weights = np.zeros((num_scrambles * num_moves))
         Y = []
-        for i in range(num_scrambles):
+
+        print(f"Sampling #{m+1}")
+
+        for i in tqdm.tqdm(range(num_scrambles)):
             # get a random scramble algorithm by resetting the environment
             _, alg = env.reset(n=num_moves)
             # get the list of moves by splitting the string
             # (we get rid of double moves to avoid confusion)
             moves = str(alg).replace("2", "").split()
-            print(moves)
+            #print(moves)
             # reset cube to solved to start iterating through the scramble
             cube, _ = env.reset(n=0)
             for j,move in enumerate(moves):
@@ -115,7 +134,7 @@ def API(num_iter, env):
                 cube, _, _ = env.step(move)
                 X[i*num_moves + j,:] = encode(cube)
                 weights[i*num_moves + j] = 1.0/(j+1)
-                env.render()
+                #env.render()
 
                 # values for each action taken from scramble state
                 values = np.zeros((env.actionsize))
@@ -143,31 +162,33 @@ def API(num_iter, env):
                 maxval = np.argmax(values)
                 p = torch.zeros(env.actionsize)
                 p[maxval] = 1
-                print(env.action_list[maxval])
+                #print(env.action_list[maxval])
                 v = values[maxval]
-                print(values[maxval])
-                print(p)
+                #print(values[maxval])
+                #print(p)
                 Y.append([p,v])
         
         # normalize weights
         weights = weights * weights.size / np.sum(weights)
 
-        print(X)
-        print(weights)
-        print(Y)
+        # uncomment to debug
+        # print(X)
+        # print(weights)
+        # print(Y)
 
         # train NN and collect loss
-        endloss = TrainNN(net,X,Y, weights)
+        print(f"Training #{m+1}")
+        endloss = TrainNN(net,X,Y, weights,EPOCHS=10)
         losses.append(endloss)
 
-    # save the model
-    #torch.save(net.state_dict(), api_model.pt)
-    print(losses)
+        # save the model after each training iteration
+        torch.save(net.state_dict(), "api_model.pt")
+        print(losses)
     return net
 
 # Uncomment to debug
 print(device)
 
 env = Cube()
-API(1,env)
+API(env, num_iter=10, load=True)
     

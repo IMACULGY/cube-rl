@@ -142,6 +142,14 @@ def encode(cube):
         arr[n,m] = 1
     return arr.flatten()
 
+def encode_with_features(cube):
+    encoding = encode(cube)
+    featureval = kociembafeature(cube)
+    return np.append(encoding, featureval)
+    
+def kociembafeature(cube):
+    # TODO: implement kociemba feature computation
+
 # uncomment to debug
 import pycuber as pc
 # cube = pc.Cube()
