@@ -6,11 +6,29 @@ class Cube(object):
         self.pycube = pc.Cube()
         self.alg = pc.Formula()
 
+        self.statesize = 20 * 24
+        self.actionsize = 12
+
         self.solvedstr = str(pc.Cube())
 
         # actions
         self.action_list = ["U", "U'", "D", "D'", "L", "L'", "R", "R'", "F", "F'", "B", "B'"]
         self.action_map = {self.action_list[i]: i for i in range(len(self.action_list))}
+
+        self.inverse = {
+            "U":"U'",
+            "U'":"U",
+            "D":"D'",
+            "D'":"D",
+            "L":"L'",
+            "L'":"L",
+            "R":"R'",
+            "R'":"R",
+            "F":"F'",
+            "F'":"F",
+            "B":"B'",
+            "B'":"B",
+        }
 
     
 
@@ -18,12 +36,12 @@ class Cube(object):
     def reset(self, n=-1):
         self.pycube = pc.Cube()
         randomalg = ""
-        if (n < 1):
+        if (n < 0):
             randomalg = self.alg.random()
-        else:
+        elif (n != 0):
             randomalg = self.alg.random(n)
         # execute the algorithm on the cube
-        cube.pycube(randomalg)
+        self.pycube(randomalg)
         return self.pycube, randomalg
     
     # step by executing the current action on the cube
@@ -32,7 +50,6 @@ class Cube(object):
         reward = -1
         done = False
         # check for termination by comparing to the solved state
-        # (this is temporary)
         if str(self.pycube) == self.solvedstr:
             reward = 1
             done = True
@@ -43,11 +60,10 @@ class Cube(object):
         print(repr(self.pycube))
 
 
-
 # Uncomment to debug
-# cube = Cube()
-# randomalg = cube.alg.random(6)
-# print(randomalg)
-# cube.pycube(randomalg)
-# print(cube.pycube)
-# cube.render()
+# env = Cube()
+# print("B2 D F R' U L")
+# pcube = env.step("")
+# print("")
+# env.render()
+# print("Solved! Sequence: L' U' R F' D' B' B'")

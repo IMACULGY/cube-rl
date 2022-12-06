@@ -134,7 +134,7 @@ def encode(cube):
         for ind in cubeletlocmap[s]:
             cubelet += (colormap[cubestr[ind]] * ind)
         # use the map to get proper cubelet index n
-        print(cubelet)
+        # print(cubelet)
         n = indexmap[tuple(np.ceil(cubelet / 999.0).astype(int))]
         # use the map to get proper location index m
         m = locationmap[cubelet[trackindex(cubelet)]]
@@ -143,7 +143,7 @@ def encode(cube):
     return arr.flatten()
 
 # uncomment to debug
-# import pycuber as pc
+import pycuber as pc
 # cube = pc.Cube()
 # print(repr(cube))
 # print(encode(cube))

@@ -1,20 +1,28 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+import tqdm
+
+from Cube import Cube
+from encode_cube import encode
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class API_NN(nn.Module):
     def __init__(self):
+        super().__init__()
         # initialize functions
         self.elu = nn.ELU()
         self.softmax = nn.Softmax()
 
         # initialize layers
-        self.l1 = nn.linear(20 * 24, 4096)
-        self.l2 = nn.linear(4096, 2048)
-        self.l3policy = nn.linear(2048, 512)
-        self.l3value = nn.linear(2048, 512)
-        self.outpolicy = nn.linear(512,12)
-        self.outvalue = nn.linear(512,1)
+        self.l1 = nn.Linear(20 * 24, 4096)
+        self.l2 = nn.Linear(4096, 2048)
+        self.l3policy = nn.Linear(2048, 512)
+        self.l3value = nn.Linear(2048, 512)
+        self.outpolicy = nn.Linear(512,12)
+        self.outvalue = nn.Linear(512,1)
 
     def forward(self,x):
         # calculate up to the second hidden layer (2048)
@@ -31,40 +39,135 @@ class API_NN(nn.Module):
         return policy, value
 
 # supervised training for NN with input [X,Y]
-def TrainNN(net, x, y):
+def TrainNN(net, x, y, weights, EPOCHS=10000):
+    # initialize tensors
+    x = torch.FloatTensor(x)
+    y1 = torch.stack([a[0] for a in y],dim=0)
+    y2 = torch.FloatTensor([[a[1]] for a in y])
+    x.to(device)
+    y1.to(device)
+    y2.to(device)
+
     # define losses and optimizer
-    celoss = None
-    mse = None
-    opt = None
+    celoss = nn.CrossEntropyLoss()
+    mseloss = nn.MSELoss()
+    opt = torch.optim.RMSprop(net.parameters(), lr=0.0001)
+    sumlosses = 0
 
-    EPOCHS = 10000
+    # progress bar!
+    bar = tqdm.trange(EPOCHS, desc="epoch")
 
-    for _ in range(EPOCHS):
+
+    for _ in bar:
         opt.zero_grad()
 
         # forward propagation
         pred = net(x)
         
         # compute loss
+        l1 = celoss(y1, pred[0])
+        l2 = mseloss(y2, pred[1])
+        sumlosses = sum([l1, l2])
+        bar.set_description(f"Loss = {sumlosses.item()}")
 
         # backward propagation
+        sumlosses.backward()
+        opt.step()
 
-    return net
+    return sumlosses.item()
 
 # initialize weights of layer m using Glorot initialization
 def init_weights(m):
     if isinstance(m, nn.Linear):
-        torch.nn.init.xavier_uniform(m.weight)
+        torch.nn.init.xavier_uniform_(m.weight)
         m.bias.data.fill_(0.01)
 
 # API algorithm (autodidactic iteration)
-def API(num_iter, ):
+def API(num_iter, env):
     # initialize neural net
+    print("Initializing weights...")
     net = API_NN()
+    net.to(device)
     net.apply(init_weights)
 
-    for i in num_iter:
+    # inialize losses for each iteration
+    losses = []
 
+    num_moves = 3
+    num_scrambles = 1
 
+    for m in range(num_iter):
+        # get n scrambled cubes
+        X = np.zeros((num_scrambles * num_moves, env.statesize))
+        weights = np.zeros((num_scrambles * num_moves))
+        Y = []
+        for i in range(num_scrambles):
+            # get a random scramble algorithm by resetting the environment
+            _, alg = env.reset(n=num_moves)
+            # get the list of moves by splitting the string
+            # (we get rid of double moves to avoid confusion)
+            moves = str(alg).replace("2", "").split()
+            print(moves)
+            # reset cube to solved to start iterating through the scramble
+            cube, _ = env.reset(n=0)
+            for j,move in enumerate(moves):
+                # move the cube to the desired state
+                cube, _, _ = env.step(move)
+                X[i*num_moves + j,:] = encode(cube)
+                weights[i*num_moves + j] = 1.0/(j+1)
+                env.render()
 
+                # values for each action taken from scramble state
+                values = np.zeros((env.actionsize))
+
+                # enumerate through entire action
+                for k,a in enumerate(env.action_list):
+                    next_cube, r, done = env.step(a)
+                    #env.render()
+                    next_state = encode(next_cube)
+
+                    # get policy and value
+                    value = torch.FloatTensor([0])
+                    policy = None
+                    if not done:
+                        policy,value = net(next_state)
+                    # print(f"POLICY {k}: {policy}")
+                    # print(value)
+                    # print(f"VALUE {env.action_list[k]}: {value.item() + r}")
+                    values[k] = value.item() + r
+
+                    # revert the cube back
+                    env.step(env.inverse[a])
+
+                # get target value and policy
+                maxval = np.argmax(values)
+                p = torch.zeros(env.actionsize)
+                p[maxval] = 1
+                print(env.action_list[maxval])
+                v = values[maxval]
+                print(values[maxval])
+                print(p)
+                Y.append([p,v])
+        
+        # normalize weights
+        weights = weights * weights.size / np.sum(weights)
+
+        print(X)
+        print(weights)
+        print(Y)
+
+        # train NN and collect loss
+        endloss = TrainNN(net,X,Y, weights)
+        losses.append(endloss)
+
+    # save the model
+    #torch.save(net.state_dict(), api_model.pt)
+    print(losses)
+    return net
+
+# Uncomment to debug
+print(device)
+
+env = Cube()
+API(1,env)
     
