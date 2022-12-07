@@ -111,7 +111,7 @@ def API(env, num_iter=10000, load=False, loadPath="api_model.pt"):
 
     for m in range(num_iter):
         # update number of moves per scramble
-        # num_moves = (m+1)/num_iter * 20
+        num_moves = min(int((m+1)/num_iter * 40)+1, 20)
 
         # get n scrambled cubes
         X = np.zeros((num_scrambles * num_moves, env.statesize))
@@ -120,7 +120,7 @@ def API(env, num_iter=10000, load=False, loadPath="api_model.pt"):
 
         print(f"Sampling #{m+1}")
 
-        for i in tqdm.tqdm(range(num_scrambles)):
+        for i in tqdm.tqdm(range(num_scrambles), desc=f"numMoves = {num_moves}"):
             # get a random scramble algorithm by resetting the environment
             _, alg = env.reset(n=num_moves)
             # get the list of moves by splitting the string
@@ -183,6 +183,9 @@ def API(env, num_iter=10000, load=False, loadPath="api_model.pt"):
 
         # save the model after each training iteration
         torch.save(net.state_dict(), "api_model.pt")
+
+        # save the losses array
+        np.save("api_loss.npy", losses)
         print(losses)
     return net
 
@@ -190,5 +193,5 @@ def API(env, num_iter=10000, load=False, loadPath="api_model.pt"):
 print(device)
 
 env = Cube()
-API(env, num_iter=10, load=True)
+API(env, num_iter=10000, load=True)
     

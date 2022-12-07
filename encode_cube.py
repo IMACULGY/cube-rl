@@ -149,6 +149,7 @@ def encode_with_features(cube):
     
 def kociembafeature(cube):
     # TODO: implement kociemba feature computation
+    pass
 
 # uncomment to debug
 import pycuber as pc
