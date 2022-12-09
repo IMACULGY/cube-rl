@@ -26,7 +26,7 @@ class API_NN(nn.Module):
 
     def forward(self,x):
         # calculate up to the second hidden layer (2048)
-        current = torch.FloatTensor(x)
+        current = torch.tensor(x).to(device).to(torch.float)
         current = self.elu(self.l1(current))
         current = self.elu(self.l2(current))
         # calculate policy
@@ -41,14 +41,10 @@ class API_NN(nn.Module):
 # supervised training for NN with input [X,Y]
 def TrainNN(net, x, y, weights, EPOCHS=10):
     # initialize tensors
-    x = torch.FloatTensor(x)
-    y1 = torch.stack([a[0] for a in y],dim=0)
-    y2 = torch.FloatTensor([[a[1]] for a in y])
-    weights = torch.FloatTensor(weights)
-    x.to(device)
-    y1.to(device)
-    y2.to(device)
-    weights.to(device)
+    x = torch.tensor(x).to(device)
+    y1 = torch.stack([a[0] for a in y],dim=0).to(device)
+    y2 = torch.FloatTensor([[a[1]] for a in y]).to(device)
+    weights = torch.FloatTensor(weights).to(device)
 
     # print(weights)
 
@@ -93,8 +89,7 @@ def init_weights(m):
 # API algorithm (autodidactic iteration)
 def API(env, num_iter=10000, load=False, loadPath="api_model.pt"):
     # initialize neural net
-    net = API_NN()
-    net.to(device)
+    net = API_NN().to(device).to(torch.float)
     if (load):
         print(f"Loading from {loadPath}")
         net.load_state_dict(torch.load(loadPath))
@@ -186,7 +181,7 @@ def API(env, num_iter=10000, load=False, loadPath="api_model.pt"):
 
         # save the losses array
         np.save("api_loss.npy", losses)
-        print(losses)
+        #print(losses)
     return net
 
 # Uncomment to debug
