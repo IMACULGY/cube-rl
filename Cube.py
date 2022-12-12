@@ -59,6 +59,20 @@ class Cube(object):
     def render(self):
         print(repr(self.pycube))
 
+    # explore each action from the current state
+    def explore(self):
+        res_states, res_rewards, res_dones = [], [], []
+        for action in self.action_list:
+            # step in the direction
+            next_s, reward, done = self.step(action)
+            res_states.append(str(next_s))
+            res_rewards.append(reward)
+            res_dones.append(int(done))
+            # revert it back
+            _,_,_ = self.step(self.inverse[action])
+        return res_states, res_rewards, res_dones
+
+
 
 # Uncomment to debug
 # env = Cube()

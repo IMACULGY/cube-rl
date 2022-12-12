@@ -187,6 +187,6 @@ def API(env, num_iter=10000, load=False, loadPath="api_model.pt"):
 # Uncomment to debug
 print(device)
 
-env = Cube()
-API(env, num_iter=10000, load=True)
+# env = Cube()
+# API(env, num_iter=10000, load=True)
     

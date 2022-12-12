@@ -148,12 +148,27 @@ def encode_with_features(cube):
     return np.append(encoding, featureval)
     
 def kociembafeature(cube):
-    # TODO: implement kociemba feature computation
-    pass
+    # implement kociemba feature computation
+    # if we are in G1, the top and bottom will both only consist of white and yellow
+    
+    # indices for top and bottom
+    top = [13, 35, 51, 29, 10, 16, 54, 48]
+    bottom = [181, 203, 219, 197, 178, 184, 222, 216]
 
+    cubestr = str(cube)
+    print(cubestr)
+
+    for ind in top + bottom:
+        color = cubestr[ind]
+        if color != 'y' and color != 'w':
+            return 0
+
+    return 1
+    
 # uncomment to debug
-import pycuber as pc
+# import pycuber as pc
 # cube = pc.Cube()
+# print(kociembafeature(cube))
 # print(repr(cube))
 # print(encode(cube))
 # cube("R U R'")
