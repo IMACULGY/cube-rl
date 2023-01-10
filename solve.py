@@ -10,13 +10,13 @@ import time
 from Cube import Cube
 from encode_cube import encode
 from approx_policy_iter import API_NN
-import mcts
+import api_mcts
 
 def solve(env, alg, net, max_seconds=60, max_steps=None, device=torch.device("cpu"), quiet=False, batch_size=1):
     print(f"Solving cube with scramble: {alg}")
     env.render()
     cube_state = env.pycube
-    tree = mcts.MCTS(env, cube_state, alg, net)
+    tree = api_mcts.MCTS(env, cube_state, alg, net)
     step_no = 0
     ts = time.time()
 
@@ -56,7 +56,7 @@ def solve(env, alg, net, max_seconds=60, max_steps=None, device=torch.device("cp
             return tree, None
 
 
-def solve_scramble(n=20):
+def solve_scramble(n=20, maxseconds = 120):
     env = Cube()
 
     # net
@@ -74,6 +74,4 @@ def solve_scramble(n=20):
     state, _, _ = env.step(alg)
     print(alg)
 
-    tree, sol = solve(env, alg, net)
-
-solve_scramble(4)
+    tree, sol = solve(env, alg, net, max_seconds=maxseconds)
