@@ -1,5 +1,9 @@
 # Solving the Rubik's Cube with and without human knowledge
 
+## Report
+
+Please view the report for the project [here](https://drive.google.com/file/d/1zYKqb8JM2uSWLo0HhWLuFy20m4SWlcZC/view?usp=sharing)!
+
 ## References:
 Forest Agostinelli*, Stephen McAleer*, Alexander Shmakov*, Pierre Baldi. Solving the Rubik's
 Cube with Deep Reinforcement Learning and Search. Nature Machine Intelligence,
